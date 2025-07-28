@@ -157,7 +157,7 @@ export default function Signup() {
                     {/* Submit */}
                     <button
                         type="submit"
-                        className="btn-submit w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors">
+                        className="btn-submit w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600 transition-colors cursor-pointer">
                         Sign Up
                     </button>
                 </form>
