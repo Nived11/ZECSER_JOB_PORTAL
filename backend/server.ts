@@ -9,10 +9,15 @@ import cookieParser from "cookie-parser";
 env.config();
 
 const app = express();
-app.use(cors());
+
 app.use(express.json());
 app.use(cookieParser());
-
+app.use(
+  cors({
+    origin: "http://localhost:5173", // ✅ Your React frontend
+    credentials: true,               // ✅ must send cookies
+  })
+);
 app.use("/api", router);
 
 

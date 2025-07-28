@@ -7,7 +7,7 @@ const userSchema = new mongoose.Schema({
   role: { type: String, enum: ["employee", "employer"] },
   otp: {type:String},
   otpExpires:{type:Date},
-  isVerified: {type: Boolean,default: false,
+  otpVerified: {type: Boolean,default: false,
 }
 
 });
