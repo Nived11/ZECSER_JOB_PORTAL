@@ -5,7 +5,6 @@ import { sendOtp } from "../utils/sendMail"
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 
-// Extend Express Request interface to include 'user'
 declare global {
   namespace Express {
     interface Request {
@@ -34,7 +33,6 @@ export const register = async (req: Request, res: Response) => {
       }
     }
 
-    // fresh new user
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const newUser = new User({
@@ -87,7 +85,7 @@ try {
   await user.save();
   
   const token = jwt.sign(
-      { id: user._id, role: user.role },
+      { id: user._id, },
       process.env.JWT_SECRET!,
       { expiresIn: "1d" }
     );
@@ -149,12 +147,55 @@ export const logout = (req: Request, res: Response) => {
 };
 
 
+export const verifyResetOtp = async (req: Request, res: Response) => {
+  const { email, otp } = req.body;
+  try {
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ message: "User not found" });
+
+    if (user.otp !== otp || !user.otpExpires || user.otpExpires.getTime() < Date.now()) {
+      return res.status(400).json({ message: "Invalid or expired OTP" });
+    }
+
+    user.otp = null;
+    user.otpExpires = null;
+    await user.save();
+
+    res.status(200).json({ message: "OTP verified. Now reset password." });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const resetPassword = async (req: Request, res: Response) => {
+  const { email, newPassword, confirmPassword } = req.body;
+
+  if (!newPassword || !confirmPassword)
+    return res.status(400).json({ message: "Both password fields are required" });
+
+  if (newPassword !== confirmPassword)
+    return res.status(400).json({ message: "Passwords do not match" });
+
+  try {
+    const user = await User.findOne({ email });
+    if (!user)
+      return res.status(400).json({ message: "User not found" });
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    res.status(200).json({ message: "Password reset successful" });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
 export const home = async (req: Request, res: Response) => {
   try {
     if(!req.user) {
       return res.status(401).json({ message: "session expired please login again" });
     }
-    console.log("Accessing protected route");
     console.log("User data:", req.user);
     const _id = req.user?.id;
     console.log(_id);

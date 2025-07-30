@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
-import axios from "axios";
-import ApiPath from "../ApiPath";
+import { fetchUserData, logoutUser } from "../services/homeService";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
@@ -15,14 +14,11 @@ export default function Home() {
 
   const fetchUser = async () => {
     try {
-      const res = await axios.get(`${ApiPath}/home`, { withCredentials: true });
+      const res = await fetchUserData();
       setUser(res.data);
     } catch (err: any) {
-      console.error("Fetch user failed:", err);
-      toast.error(err?.response?.data?.message );
-      setTimeout(() => {
-        navigate("/");
-      }, 2000);
+      toast.error(err?.response?.data?.message || "Fetch failed");
+      setTimeout(() => navigate("/"), 2000);
     } finally {
       setLoading(false);
     }
@@ -30,14 +26,11 @@ export default function Home() {
 
   const handleLogout = async () => {
     try {
-      const res = await axios.post(`${ApiPath}/logout`, {}, { withCredentials: true });
+      const res = await logoutUser();
       toast.success(res.data.message);
-      setTimeout(() => {
-        navigate("/");
-      }, 2000);
-    } catch (err) {
-      console.error("Logout error:", err);
-      toast.error("Logout failed. Try again.");
+      setTimeout(() => navigate("/"), 2000);
+    } catch {
+      toast.error("Logout failed");
     }
   };
 
@@ -47,7 +40,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-tr from-indigo-100 to-purple-200 px-4">
-      <div className="bg-white rounded-3xl shadow-xl p-10 max-w-md w-full text-center border border-gray-100">
+      <div className="bg-white rounded-3xl shadow-xl p-10 max-w-md w-full text-center">
         {loading ? (
           <h1 className="text-xl font-semibold text-gray-600">Loading...</h1>
         ) : user ? (
@@ -57,15 +50,13 @@ export default function Home() {
             </h1>
             <button
               onClick={handleLogout}
-              className="mt-6 bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors cursor-pointer shadow-lg"
+              className="mt-6 bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-semibold"
             >
               Logout
             </button>
           </>
         ) : (
-          <h1 className="text-xl font-semibold text-red-500">
-            Failed to load user data.
-          </h1>
+          <h1 className="text-xl font-semibold text-red-500">Failed to load user.</h1>
         )}
       </div>
     </div>
