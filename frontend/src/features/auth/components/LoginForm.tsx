@@ -1,9 +1,7 @@
-// src/pages/LoginForm.tsx
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
-import Cookies from "js-cookie";
 import { loginUser, verifyResetOtp, resetPassword, generateOtp,} from "../services/authService";
 import OtpVerifyModal from "../components/OtpVerifyModal";
 
@@ -20,7 +18,6 @@ export default function LoginForm() {
     try {
       const res = await loginUser(data);
       toast.success(res.data.message);
-      Cookies.set("token", res.data.token);
       setTimeout(() => navigate("/home"), 2000);
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Login failed");
@@ -99,11 +96,7 @@ export default function LoginForm() {
       </form>
 
       {otpModal && (
-        <OtpVerifyModal
-          email={data.email}
-          onVerify={handleOtpVerify}
-          onClose={() => setOtpModal(false)}
-        />
+        <OtpVerifyModal  email={data.email} onVerify={handleOtpVerify} onClose={() => setOtpModal(false)} />
       )}
 
       {resetModal && (

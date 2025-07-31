@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import Cookies from "js-cookie";
 import { toast } from "react-toastify";
 import { registerUser, generateOtp, verifyOtp } from "../services/authService";
 import OtpVerifyModal from "../components/OtpVerifyModal";
@@ -27,7 +26,6 @@ export default function SignupForm() {
   const handleOtpVerify = async (otp: string) => {
     try {
       const res = await verifyOtp(formData.email, otp);
-      Cookies.set("token", res.data.token);
       toast.success(res.data.message);
       setShowOtpModal(false);
       setTimeout(() => navigate("/home"), 2000);
