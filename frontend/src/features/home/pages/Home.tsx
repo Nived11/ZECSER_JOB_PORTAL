@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { fetchUserData, logoutUser } from "../services/homeService";
-import { refreshToken } from "../../auth/services/authService";
+import { fetchUserData } from "../services/homeService";
+import { refreshToken, logoutUser } from "../../auth/services/authService";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
 
@@ -62,7 +62,7 @@ export default function Home() {
               👋 Welcome, {user.name}
             </h1>
             <button onClick={handleLogout}
-              className="mt-6 bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-semibold">
+              className="mt-6 bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-semibold cursor-pointer">
               Logout
             </button>
           </>

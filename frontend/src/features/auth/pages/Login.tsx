@@ -7,8 +7,8 @@ export default function Login() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-white">
-      <div className="w-full max-w-md bg-[#FAF9F6] rounded-3xl shadow-lg p-6">
+    <div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center p-4 bg-white">
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-6">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-gray-800">Logo</h1>
         </div>
@@ -18,7 +18,7 @@ export default function Login() {
             Login
             <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 rounded-full" />
           </button>
-          <button onClick={() => navigate("/signup")} className="flex-1 text-blue-300 font-semibold text-center pb-2">
+          <button onClick={() => navigate("/signup")} className="flex-1 cursor-pointer text-blue-300 font-semibold text-center pb-2">
             Sign Up
           </button>
         </div>
