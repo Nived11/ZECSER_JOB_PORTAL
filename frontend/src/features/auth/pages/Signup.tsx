@@ -33,7 +33,7 @@ export default function Signup() {
         <SignupForm />
 
         <SocialLinks />
-       
+
       </div>
     </div>
   );

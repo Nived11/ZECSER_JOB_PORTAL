@@ -8,7 +8,7 @@ interface Props {
   expiresAt: string;
 }
 
-export default function OtpVerifyModal({ email, onVerify,onClose, onResend, expiresAt,}: Props) {
+export default function OtpVerifyModal({ email, onVerify, onClose, onResend, expiresAt, }: Props) {
   const [otp, setOtp] = useState("");
   const [secondsLeft, setSecondsLeft] = useState(0);
 
@@ -58,7 +58,7 @@ export default function OtpVerifyModal({ email, onVerify,onClose, onResend, expi
 
         {secondsLeft > 0 ? (
           <p className="text-center text-sm mt-4 text-gray-600">
-            Resend OTP in {Math.floor(secondsLeft / 60).toString() .padStart(2, "0")}:{(secondsLeft % 60).toString().padStart(2, "0")}
+            Resend OTP in {Math.floor(secondsLeft / 60).toString().padStart(2, "0")}:{(secondsLeft % 60).toString().padStart(2, "0")}
           </p>
         ) : (
           <p className="text-center text-sm mt-4">

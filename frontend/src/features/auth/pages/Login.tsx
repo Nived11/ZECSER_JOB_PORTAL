@@ -7,7 +7,7 @@ export default function Login() {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center p-4 bg-white">
+    <div className="min-h-screen bg-[#FAF9F6] flex items-center justify-center p-4 ">
       <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-6">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-gray-800">Logo</h1>

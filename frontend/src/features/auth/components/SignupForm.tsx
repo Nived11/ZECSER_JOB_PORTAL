@@ -4,25 +4,34 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { registerUser, generateOtp, verifyOtp } from "../services/authService";
 import OtpVerifyModal from "../components/OtpVerifyModal";
-import { validatePassword } from "../../../utils/validators";
+import { validatePassword, validateEmail, validateName } from "../../../utils/validators";
 
 export default function SignupForm() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({ name: "", email: "", password: "" });
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [formData, setFormData] = useState({ name: "", email: "", password: "", confirmPassword: "" });
+  const [NameError, setNameError] = useState<string | null>(null);
+  const [emailError, setEmailError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [confirmError, setConfirmError] = useState<string | null>(null);
   const [showOtpModal, setShowOtpModal] = useState(false);
   const [otpExpiresAt, setOtpExpiresAt] = useState<string>("");
 
 
-
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
+    const enteredName = validateName(formData.name);
+    const enteredEmail = validateEmail(formData.email);
     const enteredPassword = validatePassword(formData.password);
-    if (enteredPassword) {
-      setPasswordError(enteredPassword);
-      return;
-    }
+
+    if (enteredName) { setNameError(enteredName); return; }
+    if (enteredEmail) { setEmailError(enteredEmail); return; }
+    if (enteredPassword) { setPasswordError(enteredPassword); return; }
+    if (formData.password !== formData.confirmPassword) { setConfirmError("Passwords do not match"); return; }
+
+    setConfirmError(null)
+
     try {
       const res = await generateOtp(formData.email, "signup");
       toast.success("OTP sent to email");
@@ -30,7 +39,7 @@ export default function SignupForm() {
       setOtpExpiresAt(res.data.expiresAt);
       setShowOtpModal(true);
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to send OTP");
+      toast.error(err?.response?.data?.message);
     }
   };
 
@@ -65,34 +74,43 @@ export default function SignupForm() {
       <form onSubmit={handleRegister} className="space-y-4 mb-6">
         <div>
           <label className="block text-gray-600 text-sm mb-2">Full Name</label>
-          <input type="text" className="w-full p-2.5 border border-gray-200 rounded-lg"
-            value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
+          <input type="text" className="w-full p-2  border border-gray-200 rounded-lg outline-none focus:border-blue-300"
+            value={formData.name}
+            onChange={(e) => {
+              setFormData({ ...formData, name: e.target.value });
+              setNameError(validateName(e.target.value));
+            }} required />
+          {NameError && (
+            <span className="text-xs text-red-500">{NameError}</span>
+          )}
         </div>
 
         <div>
           <label className="block text-gray-600 text-sm mb-2">Email</label>
-          <input type="email" className="w-full p-2.5 border border-gray-200 rounded-lg"
-            value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required />
+          <input type="email" className="w-full p-2 border border-gray-200 rounded-lg outline-none focus:border-blue-300"
+            value={formData.email}
+            onChange={(e) => {
+              setFormData({ ...formData, email: e.target.value });
+              setEmailError(validateEmail(e.target.value));
+            }} required />
+          {emailError && (
+            <span className="text-xs text-red-500">{emailError}</span>
+          )}
         </div>
 
         <div>
           <label className="block text-gray-600 text-sm mb-2">Password</label>
           <div className="relative">
-            <input
-              type={showPassword ? "text" : "password"}
-              className={`w-full p-2.5 border pr-12 rounded-lg ${passwordError ? "border-red-500" : "border-gray-200"}`}
+            <input type={showPassword ? "text" : "password"}
+              className={`w-full p-2 border pr-12 rounded-lg outline-none focus:border-blue-300 ${passwordError ? "border-red-500" : "border-gray-200"}`}
               value={formData.password}
               onChange={(e) => {
                 setFormData({ ...formData, password: e.target.value });
                 setPasswordError(validatePassword(e.target.value));
-              }}
-              required
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 cursor-pointer"
-            >
+              }} required />
+
+            <button type="button" onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 cursor-pointer">
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
@@ -100,6 +118,30 @@ export default function SignupForm() {
             <span className="text-xs text-red-500">{passwordError}</span>
           )}
         </div>
+
+        <div>
+          <label className="block text-gray-600 text-sm mb-2">Confirm Password</label>
+          <div className="relative">
+            <input type={showConfirmPassword ? "text" : "password"}
+              className={`w-full p-2 border rounded-lg outline-none focus:border-blue-300 ${confirmError ? "border-red-500" : "border-gray-200"}`}
+              value={formData.confirmPassword}
+              onChange={(e) => {
+                setFormData({ ...formData, confirmPassword: e.target.value });
+                if (formData.password !== e.target.value) {
+                  setConfirmError("Passwords do not match");
+                } else {
+                  setConfirmError(null);
+                }
+              }} required />
+
+            <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 cursor-pointer" >
+              {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
+          </div>
+          {confirmError && <span className="text-xs text-red-500">{confirmError}</span>}
+        </div>
+
 
         <div className="flex items-start text-xs text-gray-600 gap-2">
           <input type="checkbox" className="mt-1" required />
@@ -120,14 +162,10 @@ export default function SignupForm() {
           email={formData.email}
           expiresAt={otpExpiresAt}
           onVerify={handleOtpVerify}
-          onClose={() => {
-            localStorage.removeItem("temp_signup");
-            setShowOtpModal(false);
-          }}
+          onClose={() => { localStorage.removeItem("temp_signup"); setShowOtpModal(false); }}
           onResend={handleResendOtp}
         />
       )}
-
     </>
   );
 }
