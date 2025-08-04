@@ -14,29 +14,37 @@ declare global {
 
 // Register User
 export const register = async (req: Request, res: Response) => {
-  const { name, email, password } = req.body;
+  const { name, email, password ,phone} = req.body;
 
   try {
-    const existing = await User.findOne({ email });
-    if (existing) return res.status(400).json({ message: "User already exists" });
+    const existingemail = await User.findOne({ email });
+    if (existingemail) return res.status(400).json({ message: "User already exists" });
+
+    const existingphone = await User.findOne({ phone });
+if (existingphone) {
+  return res.status(409).json({ message: "User with this phone already exists" });
+}
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = await User.create({ name, email, password: hashedPassword, role: "employee",});
+    const newUser = await User.create({ name, email,phone, password: hashedPassword, role: "employee",});
 
     res.status(201).json({ message: "User registered successfully", userId: newUser._id });
   } catch (err) {
     res.status(500).json({ message: "Registration failed" });
+    console.log(err);
+    
   }
 };
 
 
 //  Login User
 export const login = async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  const { email,phone, password } = req.body;
 
   try {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ $or: [{ email: email }, { phone: phone }],});
+
     if (!user) return res.status(400).json({ message: "User not found" });
 
     const isMatch = await bcrypt.compare(password, user.password!);
@@ -90,9 +98,9 @@ export const refreshToken = async (req: Request, res: Response) => {
 
 //  Reset Password
 export const resetPassword = async (req: Request, res: Response) => {
-  const { email, newPassword, confirmPassword } = req.body;
+  const { email, phone, newPassword, confirmPassword } = req.body;
 
-  if (!email || !newPassword || !confirmPassword) {
+  if ((!email && !phone) || !newPassword || !confirmPassword) {
     return res.status(400).json({ message: "All fields are required" });
   }
 
@@ -101,7 +109,9 @@ export const resetPassword = async (req: Request, res: Response) => {
   }
 
   try {
-    const user = await User.findOne({ email });
+    
+    const user = await User.findOne(email ? { email } : { phone });
+
     if (!user) return res.status(400).json({ message: "User not found" });
 
     user.password = await bcrypt.hash(newPassword, 10);
@@ -110,9 +120,11 @@ export const resetPassword = async (req: Request, res: Response) => {
 
     res.status(200).json({ message: "Password reset successful" });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Server error" });
   }
 };
+
 
 //  Logout
 export const logout = (req: Request, res: Response) => {

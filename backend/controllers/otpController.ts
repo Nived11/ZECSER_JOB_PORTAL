@@ -2,67 +2,90 @@ import { Request, Response } from "express";
 import { Otp } from "../models/otpModel";
 import User from "../models/userModel"
 import crypto from "crypto";
-import { sendOtp } from "../utils/sendMail";
+import { sendOtpEmail } from "../utils/sendOtpMail";
+import { sendOtpSMS } from "../utils/sendOtpSMS"; 
 
 // Send OTP
 export const generateOtp = async (req: Request, res: Response) => {
-  const { email, purpose } = req.body;
-
-  if (!["signup", "reset"].includes(purpose)) {
-    return res.status(400).json({ message: "Invalid OTP purpose" });
-  }
+  const { email, phone, purpose } = req.body;
 
   try {
-    const user = await User.findOne({ email });
+    let user = null;
+
     if (purpose === "signup") {
-      if (user) {
-        return res.status(404).json({ message: "User already exists" });
+      if (email) {
+        user = await User.findOne({ email });
+        if (user) return res.status(400).json({ message: "User already exists" });
+      }
+
+      if (phone) {
+        user = await User.findOne({ phone });
+        if (user) return res.status(400).json({ message: "User already exists" });
       }
     }
+
     if (purpose === "reset") {
+      if (email) {
+        user = await User.findOne({ email });
+      } else if (phone) {
+        user = await User.findOne({ phone });
+      }
+
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
     }
 
+    if (!email && !phone) {
+      return res.status(400).json({ message: "Email or Phone is required" });
+    }
+
     const otp = crypto.randomInt(100000, 999999).toString();
-
-    // const expiresAt = new Date(Date.now() + 30 * 1000); //30sec
-
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes 
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+    // const expiresAt = new Date(Date.now() + 30 * 1000); // 30 seconds
 
 
-    await Otp.deleteMany({ email, purpose });
-    await Otp.create({ email, otp, purpose, expiresAt });
+    const otpDoc = new Otp({ email, phone, otp, purpose, expiresAt });
+    await otpDoc.save();
 
-    await sendOtp(email, otp);
+    if (email) {
+      await sendOtpEmail(email, otp);
+    } else if (phone) {
+      await sendOtpSMS(phone, otp);
+    }
 
-    res.status(200).json({ message: "OTP sent to email", expiresAt });
+    res.json({ message: "OTP sent", expiresAt });
   } catch (err) {
-    res.status(500).json({ message: "Server error" });
+    console.error("OTP Generation Error:", err);
+    return res.status(500).json({ message: "Server error" });
   }
 };
+
 
 
 // Verify OTP
 export const verifyOtp = async (req: Request, res: Response) => {
-  const { email, otp, purpose } = req.body;
+  const { email, phone, otp, purpose } = req.body;
 
-  try {
-    const record = await Otp.findOne({ email, otp, purpose });
+  const query: any = { otp, purpose };
+  if (email) query.email = email;
+  if (phone) query.phone = phone;
 
-    if (!record) return res.status(400).json({ message: "Invalid OTP" });
+  console.log("OTP Verify Query:", query);
 
-    if (record.expiresAt.getTime() < Date.now()) {
-      await Otp.deleteOne({ _id: record._id });
-      return res.status(400).json({ message: "OTP expired" });
-    }
+  const otpDoc = await Otp.findOne(query);
+  
+  console.log("Found OTP Doc:", otpDoc);
 
-    await Otp.deleteOne({ _id: record._id });
-
-    res.status(200).json({ message: "OTP verified" });
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
+  if (!otpDoc) {
+    return res.status(400).json({ message: "Invalid OTP" });
   }
-};
 
+  if ( otpDoc.expiresAt < new Date()) {
+    return res.status(400).json({ message: "OTP has expired" });
+  }
+
+  await Otp.deleteOne({ _id: otpDoc._id });
+
+  res.json({ message: "OTP verified" });
+};

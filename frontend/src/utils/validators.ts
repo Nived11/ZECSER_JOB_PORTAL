@@ -10,13 +10,15 @@ export const validateName = (name: string): string | null => {
 };
 
 
-export const validatePassword = (password: string): string | null => {
-  if (!password) return "Password is required";
-  const regex = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{6,}$/;
-  return regex.test(password)
+export const validatePhone = (phone: string): string | null => {
+  if (!phone) return "Phone number is required";
+
+  const regex = /^\d{10}$/;
+  return regex.test(phone)
     ? null
-    : "Min 6 chars, 1 uppercase, 1 number, 1 special";
+    : "Phone must be exactly 10 digits with numbers only";
 };
+
 
 export const validateEmail = (email: string): string | null => {
   if (!email) return "Email is required";
@@ -27,3 +29,14 @@ export const validateEmail = (email: string): string | null => {
     ? null
     : "Enter a valid email";
 };
+
+
+export const validatePassword = (password: string): string | null => {
+  if (!password) return "Password is required";
+  const regex = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{6,}$/;
+  return regex.test(password)
+    ? null
+    : "Min 6 chars, 1 uppercase, 1 number, 1 special";
+};
+
+

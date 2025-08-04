@@ -11,18 +11,26 @@ export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [showResetNewPassword, setShowResetNewPassword] = useState(false);
   const [showResetConfirmPassword, setShowResetConfirmPassword] = useState(false);
-  const [data, setData] = useState({ email: "", password: "" });
+  const [data, setData] = useState({ emailOrPhone: "", password: "" });
   const [otpModal, setOtpModal] = useState(false);
   const [resetModal, setResetModal] = useState(false);
   const [resetData, setResetData] = useState({ newPassword: "", confirmPassword: "" });
   const [resetPasswordError, setResetPasswordError] = useState<string | null>(null);
   const [otpExpiresAt, setOtpExpiresAt] = useState<string>("");
+  const [otpMethod, setOtpMethod] = useState<"email" | "phone">("email");
 
+  
+  const detectMethod = (value: string): "email" | "phone" => {
+    return /^\d{10}$/.test(value) ? "phone" : "email";
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await loginUser(data);
+      const res = await loginUser({
+        [detectMethod(data.emailOrPhone)]: data.emailOrPhone,
+        password: data.password,
+      });
       toast.success(res.data.message);
       setTimeout(() => navigate("/home"), 2000);
     } catch (err: any) {
@@ -31,10 +39,12 @@ export default function LoginForm() {
   };
 
   const handleForgotPassword = async () => {
-    if (!data.email) return toast.error("Enter your email first");
+    if (!data.emailOrPhone) return toast.error("Enter your email or phone first");
+    const method = detectMethod(data.emailOrPhone);
+    setOtpMethod(method);
     try {
-      const res = await generateOtp(data.email, "reset");
-      toast.success("OTP sent to email");
+      const res = await generateOtp("reset", method === "email" ? data.emailOrPhone : undefined, method === "phone" ? data.emailOrPhone : undefined);
+      toast.success(`OTP sent to ${method}`);
       setOtpExpiresAt(res.data.expiresAt);
       setOtpModal(true);
     } catch (err: any) {
@@ -42,10 +52,9 @@ export default function LoginForm() {
     }
   };
 
-
   const handleOtpVerify = async (otp: string) => {
     try {
-      await verifyOtp(data.email, otp, "reset");
+      await verifyOtp(data.emailOrPhone, otp, "reset", otpMethod);
       toast.success("OTP verified. Now reset password");
       setOtpModal(false);
       setResetModal(true);
@@ -64,7 +73,7 @@ export default function LoginForm() {
     if (newPassword !== confirmPassword) return toast.error("Passwords mismatch");
 
     try {
-      await resetPassword(data.email, newPassword, confirmPassword);
+      await resetPassword(data.emailOrPhone, newPassword, confirmPassword);
       toast.success("Password updated successfully");
       setResetModal(false);
       setResetData({ newPassword: "", confirmPassword: "" });
@@ -72,9 +81,10 @@ export default function LoginForm() {
       toast.error(err?.response?.data?.message || "Reset failed");
     }
   };
+
   const handleResendOtp = async () => {
     try {
-      const res = await generateOtp(data.email, "reset");
+      const res = await generateOtp("reset", otpMethod === "email" ? data.emailOrPhone : undefined, otpMethod === "phone" ? data.emailOrPhone : undefined);
       toast.success("OTP resent");
       setOtpExpiresAt(res.data.expiresAt);
     } catch (err: any) {
@@ -92,26 +102,31 @@ export default function LoginForm() {
     <>
       <form onSubmit={handleLogin} className="space-y-4 mb-6">
         <div>
-          <label className="block text-gray-600 text-sm mb-2">Email</label>
-          <input  type="email"
+          <label className="block text-gray-600 text-sm mb-2">Email / Phone</label>
+          <input
+            type="text"
             className="w-full p-3 border border-gray-200 rounded-lg"
-            value={data.email}
-            onChange={(e) => setData({ ...data, email: e.target.value })}
-            required/>
+            value={data.emailOrPhone}
+            onChange={(e) => setData({ ...data, emailOrPhone: e.target.value })}
+            required
+          />
         </div>
 
         <div>
           <label className="block text-gray-600 text-sm mb-2">Password</label>
           <div className="relative">
-            <input type={showPassword ? "text" : "password"}
+            <input
+              type={showPassword ? "text" : "password"}
               className="w-full p-3 border border-gray-200 rounded-lg pr-12"
               value={data.password}
               onChange={(e) => setData({ ...data, password: e.target.value })}
-              required/>
-
-            <button type="button"
+              required
+            />
+            <button
+              type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="cursor-pointer absolute right-3 top-1/2 -translate-y-1/2 text-gray-500" >
+              className="cursor-pointer absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+            >
               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
           </div>
@@ -123,15 +138,18 @@ export default function LoginForm() {
           </span>
         </div>
 
-        <button  type="submit"
-          className="cursor-pointer w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600" >
+        <button
+          type="submit"
+          className="cursor-pointer w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600"
+        >
           Login
         </button>
       </form>
 
       {otpModal && (
         <OtpVerifyModal
-          email={data.email}
+          value={data.emailOrPhone}
+          method={otpMethod}
           onVerify={handleOtpVerify}
           onClose={() => setOtpModal(false)}
           onResend={handleResendOtp}
@@ -139,46 +157,55 @@ export default function LoginForm() {
         />
       )}
 
-
       {resetModal && (
         <div className="fixed inset-0 bg-black/30 backdrop-blur-md flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-xl shadow-xl w-full max-w-sm">
             <h2 className="text-lg font-semibold mb-4 text-center">Reset Password</h2>
 
             <div className="relative mb-2">
-              <input type={showResetNewPassword ? "text" : "password"}
+              <input
+                type={showResetNewPassword ? "text" : "password"}
                 placeholder="New Password"
                 className="w-full p-3 border border-gray-300 rounded pr-12"
                 value={resetData.newPassword}
-                onChange={handleNewPasswordChange} />
-
-              <button  type="button"
+                onChange={handleNewPasswordChange}
+              />
+              <button
+                type="button"
                 onClick={() => setShowResetNewPassword(!showResetNewPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer" >
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer"
+              >
                 {showResetNewPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
-              
             </div>
-            {resetPasswordError && <span className="text-red-500 text-sm mb-3 block">{resetPasswordError}</span>}
+
+            {resetPasswordError && (
+              <span className="text-red-500 text-sm mb-3 block">{resetPasswordError}</span>
+            )}
 
             <div className="relative mb-4">
-
-              <input type={showResetConfirmPassword ? "text" : "password"}
+              <input
+                type={showResetConfirmPassword ? "text" : "password"}
                 placeholder="Confirm Password"
                 className="w-full p-3 border border-gray-300 rounded pr-12"
                 value={resetData.confirmPassword}
-                onChange={(e) => setResetData({ ...resetData, confirmPassword: e.target.value })}/>
-
-              <button type="button"
+                onChange={(e) =>
+                  setResetData({ ...resetData, confirmPassword: e.target.value })
+                }
+              />
+              <button
+                type="button"
                 onClick={() => setShowResetConfirmPassword(!showResetConfirmPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer" >
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 cursor-pointer"
+              >
                 {showResetConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
-
             </div>
 
-            <button  onClick={handleResetPassword}
-              className="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600 cursor-pointer" >
+            <button
+              onClick={handleResetPassword}
+              className="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600 cursor-pointer"
+            >
               Submit
             </button>
           </div>

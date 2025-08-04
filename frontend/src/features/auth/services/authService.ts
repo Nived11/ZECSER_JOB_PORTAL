@@ -1,7 +1,6 @@
 import axios from "axios";
 import ApiPath from "../../../shared/ApiPath";
 
-
 const authBase = `${ApiPath}/auth`;
 const otpBase = `${ApiPath}/otp`;
 
@@ -14,14 +13,16 @@ export const loginUser = (data: any) =>
 export const logoutUser = () =>
   axios.post(`${authBase}/logout`, {}, { withCredentials: true });
 
-export const resetPassword = (email: string, newPassword: string, confirmPassword: string) =>
-  axios.post(`${authBase}/reset-password`, { email, newPassword, confirmPassword });
+export const resetPassword = (value: string, newPassword: string, confirmPassword: string) => {
+  const isPhone = /^\d{10}$/.test(value);
+  return axios.post(`${authBase}/reset-password`, { [isPhone ? "phone" : "email"]: value,  newPassword,  confirmPassword, });
+};
 
-export const refreshToken = () =>
+export const refreshToken = () => 
   axios.post(`${authBase}/refresh-token`, {}, { withCredentials: true });
 
-export const generateOtp = (email: string, purpose: "signup" | "reset") =>
-  axios.post(`${otpBase}/generate-otp`, { email, purpose });
+export const generateOtp = (purpose: "signup" | "reset", email?: string, phone?: string) =>
+  axios.post(`${otpBase}/generate-otp`, { email, phone, purpose });
 
-export const verifyOtp = (email: string, otp: string, purpose: "signup" | "reset") =>
-  axios.post(`${otpBase}/verify-otp`, { email, otp, purpose }, { withCredentials: true });
+export const verifyOtp = ( value: string, otp: string, purpose: "signup" | "reset", method: "email" | "phone") =>
+  axios.post(`${otpBase}/verify-otp`, { [method]: value, otp, purpose }, { withCredentials: true });

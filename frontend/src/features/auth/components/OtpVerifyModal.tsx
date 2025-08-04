@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 
 interface Props {
-  email: string;
+  value: string;
+  method: "email" | "phone";
   onVerify: (otp: string) => void;
   onClose: () => void;
   onResend: () => void;
   expiresAt: string;
 }
 
-export default function OtpVerifyModal({ email, onVerify, onClose, onResend, expiresAt, }: Props) {
+export default function OtpVerifyModal({ value, method, onVerify, onClose, onResend, expiresAt, }: Props) {
   const [otp, setOtp] = useState("");
   const [secondsLeft, setSecondsLeft] = useState(0);
 
@@ -30,13 +31,12 @@ export default function OtpVerifyModal({ email, onVerify, onClose, onResend, exp
       <div className="bg-white/70 p-8 rounded-xl shadow-xl w-full max-w-sm relative">
         <button
           onClick={onClose}
-          className="absolute right-3 top-3 text-gray-400 hover:text-red-500 text-lg font-bold cursor-pointer"
-        >
+          className="absolute right-3 top-3 text-gray-400 hover:text-red-500 text-lg font-bold cursor-pointer">
           ✕
         </button>
 
         <h2 className="text-lg font-semibold mb-4 text-center">
-          Enter OTP sent to {email}
+           Enter OTP sent to your {method}: <span className="font-mono text-sm">{value}</span>
         </h2>
 
         <input
@@ -51,8 +51,7 @@ export default function OtpVerifyModal({ email, onVerify, onClose, onResend, exp
 
         <button
           onClick={() => onVerify(otp)}
-          className="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600 cursor-pointer"
-        >
+          className="w-full bg-blue-500 text-white py-3 rounded-lg font-semibold hover:bg-blue-600 cursor-pointer" >
           Verify
         </button>
 
@@ -63,10 +62,8 @@ export default function OtpVerifyModal({ email, onVerify, onClose, onResend, exp
         ) : (
           <p className="text-center text-sm mt-4">
             Didn't get the OTP?{" "}
-            <span
-              onClick={onResend}
-              className="text-blue-600 cursor-pointer font-medium hover:underline cursor-pointer"
-            >
+            <span onClick={onResend}
+              className="text-blue-600 cursor-pointer font-medium hover:underline cursor-pointer" >
               Resend OTP
             </span>
           </p>
